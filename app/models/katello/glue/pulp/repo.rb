@@ -767,11 +767,7 @@ module Glue::Pulp::Repo
     end
 
     def import_upload(upload_id)
-      response = Katello.pulp_server.resources.content.import_into_repo(pulp_id, unit_type_id, upload_id, {}, {:unit_metadata => {}})
-      task = PulpTaskStatus.using_pulp_task(response)
-      PulpTaskStatus.wait_for_tasks([task])
-
-      _handle_upload_import_result(task)
+      ForemanTasks.async_task(::Actions::Katello::Repository::ImportUpload, self, upload_id)
     end
 
     def unit_type_id
