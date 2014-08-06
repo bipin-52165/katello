@@ -749,27 +749,6 @@ module Glue::Pulp::Repo
       return statuses
     end
 
-    def upload_content(filepaths)
-      filepaths.map { |path| build_content_upload(path) }.each do |file|
-        upload_content_file(file[:filepath])
-      end
-    end
-
-    def build_content_upload(filepath)
-      case content_type
-      when Repository::PUPPET_TYPE
-        {:filepath => filepath, :unit_key => {}, :unit_metadata => {}}
-      when Repository::YUM_TYPE
-        {:filepath => filepath, :unit_key => {}, :unit_metadata => {}}
-      else
-        fail _("Uploads not supported for content type '%s'.") % content_type
-      end
-    end
-
-    def import_upload(upload_id)
-      ForemanTasks.sync_task(::Actions::Katello::Repository::ImportUpload, self, upload_id)
-    end
-
     def unit_type_id
       case content_type
       when Repository::YUM_TYPE
@@ -802,22 +781,6 @@ module Glue::Pulp::Repo
     end
 
     protected
-
-    def upload_content_file(filepath)
-      upload_id = Katello.pulp_server.resources.content.create_upload_request["upload_id"]
-
-      File.open(filepath, "rb") do |file|
-        offset = 0
-        while (chunk = file.read(Katello.config.pulp.upload_chunk_size))
-          Katello.pulp_server.resources.content.upload_bits(upload_id, offset, chunk)
-          offset += Katello.config.pulp.upload_chunk_size
-        end
-      end
-
-      import_upload(upload_id)
-    ensure
-      Katello.pulp_server.resources.content.delete_upload_request(upload_id) if upload_id
-    end
 
     def _get_most_recent_sync_status
       begin

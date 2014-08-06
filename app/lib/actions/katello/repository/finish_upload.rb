@@ -13,20 +13,18 @@
 module Actions
   module Katello
     module Repository
-      class ImportUpload < Actions::EntryAction
+      class FinishUpload < Actions::Base
 
-        def plan(repository, upload_id)
-          action_subject(repository)
-          import_upload = plan_action(Pulp::Repository::ImportUpload,
-                                      pulp_id: repository.pulp_id,
-                                      unit_type_id: repository.unit_type_id,
-                                      upload_id: upload_id)
+        def plan(repository, dependency = nil)
+          unless repository.puppet?
+            plan_action(Katello::Repository::MetadataGenerate, repository, nil, dependency)
+          end
 
-          plan_action(FinishUpload, repository, import_upload.output)
-        end
-
-        def humanized_name
-          _("Upload into")
+          recent_range = 5.minutes.ago.iso8601
+          plan_action(ElasticSearch::Repository::FilteredIndexContent,
+                      id: repository.id,
+                      filter: {:association => {:created => {"$gt" => recent_range}}},
+                      dependency: dependency)
         end
 
       end

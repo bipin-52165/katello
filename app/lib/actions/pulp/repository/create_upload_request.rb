@@ -11,22 +11,21 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 module Actions
-  module Katello
+  module Pulp
     module Repository
-      class ImportUpload < Actions::EntryAction
+      class CreateUploadRequest < Pulp::Abstract
 
-        def plan(repository, upload_id)
-          action_subject(repository)
-          import_upload = plan_action(Pulp::Repository::ImportUpload,
-                                      pulp_id: repository.pulp_id,
-                                      unit_type_id: repository.unit_type_id,
-                                      upload_id: upload_id)
-
-          plan_action(FinishUpload, repository, import_upload.output)
+        input_format do
         end
 
-        def humanized_name
-          _("Upload into")
+        output_format do
+          param :response
+          param :upload_id
+        end
+
+        def run
+          output[:response] = pulp_resources.content.create_upload_request
+          output[:upload_id] = output[:response][:upload_id]
         end
 
       end
