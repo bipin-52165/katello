@@ -19,7 +19,7 @@ module Actions
           repository.disable_auto_reindex!
           action_subject repository
           repository.update_attributes!(repo_params)
-          if (Katello.config.use_cp && Katello.config.use_pulp)
+          if (::Katello.config.use_cp && ::Katello.config.use_pulp)
             plan_action(::Actions::Candlepin::Product::ContentUpdate,
                         :content_id => repository.content_id,
                         :name => repository.name,
@@ -31,7 +31,7 @@ module Actions
           end
 
           if ::Katello.config.use_pulp &&
-              (repository.previous_changes.key?('feed') || repository.previous_changes.key?('unprotected')) &&
+              (repository.previous_changes.key?('url') || repository.previous_changes.key?('unprotected')) &&
               !repository.product.provider.redhat_provider?
             plan_action(::Actions::Pulp::Repository::Refresh, repository)
           end
