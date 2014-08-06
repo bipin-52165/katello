@@ -17,25 +17,24 @@ module Actions
 
         def plan(repository, upload_id)
           action_subject(repository)
-          sequence do
-            import_upload = plan_action(Pulp::Repository::ImportUpload,
-                                        pulp_id: repository.pulp_id,
-                                        unit_type_id: repository.unit_type_id,
-                                        upload_id: upload_id)
-            recent_range = 5.minutes.ago.iso8601
-            unless repository.puppet?
-              plan_action(Katello::Repository::MetadataGenerate, repository)
-            end
+          import_upload = plan_action(Pulp::Repository::ImportUpload,
+                                      pulp_id: repository.pulp_id,
+                                      unit_type_id: repository.unit_type_id,
+                                      upload_id: upload_id)
 
-            plan_action(ElasticSearch::Repository::IndexContent,
-                        id: repository.id,
-                        filter: {:association => {:created => {"$gt" => recent_range}}},
-                        dependency: import_upload.output)
+          unless repository.puppet?
+            plan_action(Katello::Repository::MetadataGenerate, repository, nil, import_upload.output)
           end
+
+          recent_range = 5.minutes.ago.iso8601
+          plan_action(ElasticSearch::Repository::FilteredIndexContent,
+                      id: repository.id,
+                      filter: {:association => {:created => {"$gt" => recent_range}}},
+                      dependency: import_upload.output)
         end
 
         def humanized_name
-          _("Upload")
+          _("Upload into")
         end
 
       end

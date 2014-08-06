@@ -22,13 +22,16 @@ module Actions
         end
 
         def invoke_external_task
-          pulp_resources..content.import_into_repo(input[:pulp_id],
+          pulp_resources.content.import_into_repo(input[:pulp_id],
                                                    input[:unit_type_id],
                                                    input[:upload_id],
                                                    {},
                                                    { unit_metadata: {} })
         end
 
+        def rescue_strategy
+          Dynflow::Action::Rescue::Skip
+        end
 
       end
     end

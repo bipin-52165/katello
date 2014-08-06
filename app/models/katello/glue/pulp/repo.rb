@@ -767,7 +767,7 @@ module Glue::Pulp::Repo
     end
 
     def import_upload(upload_id)
-      ForemanTasks.async_task(::Actions::Katello::Repository::ImportUpload, self, upload_id)
+      ForemanTasks.sync_task(::Actions::Katello::Repository::ImportUpload, self, upload_id)
     end
 
     def unit_type_id
@@ -838,21 +838,6 @@ module Glue::Pulp::Repo
       end
     end
 
-    def _handle_upload_import_result(task)
-      if task.result["success_flag"]
-        # reindex content created within the past 5 minutes
-        recent_range = 5.minutes.ago.iso8601
-        filter = {:association => {:created => {"$gt" => recent_range}}}
-        trigger_contents_changed(:wait => false, :reindex => false,
-                                 :index_units => [filter])
-      else
-        if (errors = task.result["details"]["errors"])
-          fail Katello::Errors::InvalidRepositoryContent, _("File upload failed: %s.") % errors.join(",")
-        else
-          fail Katello::Errors::InvalidRepositoryContent, _("File upload failed. Please check the file and try again.")
-        end
-      end
-    end
   end
 
   def full_path(smart_proxy = nil)
